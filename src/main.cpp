@@ -203,22 +203,53 @@ int main()
     g_manager = std::make_shared<Manager>();
 
     auto p0 = g_manager->add_particle({ 0., 0., 0. });
-    auto p1 = g_manager->add_particle({ 0., 5., 0. });
+    auto p1 = g_manager->add_particle({ 0., 1., 0. });
+    auto p2 = g_manager->add_particle({ 1., 0., 0. });
+    auto p3 = g_manager->add_particle({ 1., 1., 0. });
+    auto p4 = g_manager->add_particle({ 0., 0., 1. });
+    auto p5 = g_manager->add_particle({ 0., 1., 1. });
+    auto p6 = g_manager->add_particle({ 1., 0., 1. });
+    auto p7 = g_manager->add_particle({ 1., 1., 1. });
 
-    g_manager->add_spring({ p0, p1, 1., 1. });
-    p0.position() = { 0., -0.1, 0. };
+    // Square face edge connectivity
+    g_manager->add_spring({p0, p1});
+    g_manager->add_spring({p0, p2});
+    g_manager->add_spring({p1, p3});
+    g_manager->add_spring({p2, p3});
 
+    g_manager->add_spring({p0, p1});
+    g_manager->add_spring({p0, p2});
+    g_manager->add_spring({p1, p3});
+    g_manager->add_spring({p2, p3});
 
-    for (auto i = 0; i < 12; i++) {
-        auto state = State();
-        g_manager->adopt(rk4(state));
+    // Edges connecting corners, vertically
+    g_manager->add_spring({p0, p4});
+    g_manager->add_spring({p1, p5});
+    g_manager->add_spring({p2, p6});
+    g_manager->add_spring({p3, p7});
 
-        std::cout << i << '\n';
-        std::cout << "p0 pos: " << p0.position().transpose() << "\tvel: " << p0.velocity().transpose() << '\n';
-        std::cout << "p1 pos: " << p1.position().transpose() << "\tvel: " << p1.velocity().transpose() << '\n';
-    }
+    // Cross edges across each face
+    g_manager->add_spring({p0, p3});
+    g_manager->add_spring({p1, p2});
 
-    // for (auto&& [p, v] : std::views::zip(result.data0, result.data1)) {
-    //     std::cout << p.transpose() << '\t' << v.transpose() << '\n';
-    // }
+    g_manager->add_spring({p4, p7});
+    g_manager->add_spring({p5, p6});
+
+    g_manager->add_spring({p0, p6});
+    g_manager->add_spring({p2, p4});
+
+    g_manager->add_spring({p0, p5});
+    g_manager->add_spring({p1, p4});
+
+    g_manager->add_spring({p1, p7});
+    g_manager->add_spring({p3, p5});
+
+    g_manager->add_spring({p2, p7});
+    g_manager->add_spring({p3, p6});
+
+    // Internal diagonals
+    g_manager->add_spring({p0, p7});
+    g_manager->add_spring({p1, p6});
+    g_manager->add_spring({p3, p4});
+    g_manager->add_spring({p2, p5});
 }
