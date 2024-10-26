@@ -1,10 +1,9 @@
-#include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <ranges>
 
-using Vec3 = Eigen::Vector3d;
+#include "utils.h"
 
 struct Particle {
     size_t index;
