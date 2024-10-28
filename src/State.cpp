@@ -23,8 +23,10 @@ State State::derivative() const
         data = Vec3::Zero();
 
     for (auto&& spring : g_manager->m_springs) {
-        derivative.data1[spring.p0] += spring.force();
-        derivative.data1[spring.p1] -= spring.force();
+        Vec3 spring_force = spring.force(*this);
+
+        derivative.data1[spring.p0] += spring_force;
+        derivative.data1[spring.p1] -= spring_force;
     }
 
     return derivative;
@@ -44,4 +46,3 @@ State rk4(State const& state, double h)
 
     return state + (h / 6.) * (K1 + 2. * K2 + 2. * K3 + K4);
 }
-

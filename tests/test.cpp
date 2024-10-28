@@ -152,5 +152,108 @@ int main()
     manager.run();
     delete g_manager;
 
+    {
+        g_manager = new Manager(1. / 240.);
+
+        auto p0 = g_manager->add_particle({ 0., 0., 0. });
+        auto p1 = g_manager->add_particle({ 0., 1., 0. });
+        auto p2 = g_manager->add_particle({ -.5, .5, 0. });
+        auto p3 = g_manager->add_particle({ .5, .5, 0. });
+        auto p4 = g_manager->add_particle({ 0., .5, 0. });
+
+        g_manager->add_spring({ p0, p1 });
+        g_manager->add_spring({ p2, p3 });
+        g_manager->add_spring({ p4, p3 });
+
+        auto spring1 = g_manager->spring(0);
+        auto spring2 = g_manager->spring(1);
+        auto spring3 = g_manager->spring(2);
+
+        manager.add({ "edge::lerp (orthogonal, overlapping XYZ midpoint-midpoint) ", [&]() {
+                         auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
+                         auto const [s2, t2, m2] = spring2.lerp(spring1, State {});
+
+                         (void)m1;
+                         (void)m2;
+
+                         auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1 - 0.5) < 1e-6;
+                         auto symmetry = (s1 == t2) && (s2 == t1);
+
+                         return evaluation && symmetry;
+                     } });
+
+        manager.add({ "edge::lerp (orthogonal, overlapping XYZ end-midpoint) ", [&]() {
+                         auto const [s1, t1, m1] = spring1.lerp(spring3, State {});
+                         auto const [s2, t2, m2] = spring3.lerp(spring1, State {});
+
+                         (void)m1;
+                         (void)m2;
+
+                         auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1) < 1e-6;
+                         auto symmetry = (s1 == t2) && (s2 == t1);
+
+                         return evaluation && symmetry;
+                     } });
+
+        manager.add({ "edge::collision (orthogonal, expected, overlapping XYZ midpoint-midpoint) ", [&]() {
+                         auto initial_state = State {};
+                         auto final_state = g_manager->integrate(initial_state);
+                         auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
+
+                         return collision;
+                     } });
+
+        manager.run();
+        delete g_manager;
+    }
+
+    {
+        g_manager = new Manager(1. / 240.);
+
+        auto p0 = g_manager->add_particle({ 0., 0., 0. });
+        auto p1 = g_manager->add_particle({ 0., 1., 0. });
+        auto p2 = g_manager->add_particle({ -.5, .5, 1. / 240. }, { 0., 0., -1. });
+        auto p3 = g_manager->add_particle({ .5, .5, 1. / 240. }, { 0., 0., -1. });
+
+        g_manager->add_spring({ p0, p1 });
+        g_manager->add_spring({ p2, p3 });
+
+        auto spring1 = g_manager->spring(0);
+        auto spring2 = g_manager->spring(1);
+
+        manager.add({ "edge::lerp (orthogonal, overlapping XY midpoint-midpoint) ", [&]() {
+                         auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
+                         auto const [s2, t2, m2] = spring2.lerp(spring1, State {});
+
+                         (void)m1;
+                         (void)m2;
+
+                         auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1 - 0.5) < 1e-6;
+                         auto symmetry = (s1 == t2) && (s2 == t1);
+
+                         return evaluation && symmetry;
+                     } });
+
+        manager.add({ "edge::collision (orthogonal, overlapping XY midpoint-midpoint) ", [&]() {
+                         auto initial_state = State {};
+                         auto final_state = g_manager->integrate(initial_state);
+
+                         {
+                            // Springs are setup so that they do not intersect initially, but after integration they will
+                             auto collision = spring1.collision(spring2, initial_state, initial_state) && spring2.collision(spring1, initial_state, initial_state);
+
+                             if (collision)
+                                 return false;
+                         }
+
+                         auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
+
+                         return collision;
+                     } });
+
+        manager.run();
+        delete g_manager;
+    }
+
     manager.statistics();
 }
