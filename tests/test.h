@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024, Brandon G. Nguyen <brandon@nguyen.vc>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 #pragma once
 
 #include <functional>
@@ -32,5 +37,8 @@ struct TestManager {
 
             std::cout << ": " << test.name << '\n';
         }
+
+        std::cout.precision(4);
+        std::cout << "Passed " << 100. * ((double) num_passed) / ((double)tests.size()) << "%\n";
     }
 };

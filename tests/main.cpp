@@ -1,11 +1,21 @@
+/*
+ * Copyright (c) 2024, Brandon G. Nguyen <brandon@nguyen.vc>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 #include "Manager.h"
 #include "test.h"
 
 TestManager manager {};
-Manager* g_manager = new Manager(1. / 240.);
+Manager* g_manager;
 
-int main()
+void create_cube()
 {
+    if (g_manager != nullptr)
+        delete g_manager;
+
+    g_manager = new Manager(1. / 240.);
+
     auto p0 = g_manager->add_particle({ 0., 0., 0. });
     auto p1 = g_manager->add_particle({ 0., 1., 0. });
     auto p2 = g_manager->add_particle({ 1., 0., 0. });
@@ -80,6 +90,11 @@ int main()
         g_manager->add_spring({ p3, p4 });
         g_manager->add_spring({ p2, p5 });
     }
+}
+
+int main()
+{
+    create_cube();
 
     {
         auto face = g_manager->face(0);
@@ -131,4 +146,6 @@ int main()
     }
 
     manager.run();
+
+    delete g_manager;
 }

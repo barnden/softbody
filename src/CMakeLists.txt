@@ -1,4 +1,3 @@
-
 FILE(GLOB_RECURSE SOURCES "[^main]*.cpp")
 FILE(GLOB_RECURSE HEADERS "*.h")
 
