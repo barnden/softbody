@@ -20,25 +20,32 @@ struct Test {
 };
 
 struct TestManager {
+    size_t total = 0;
+    size_t total_passed = 0;
     std::vector<Test> tests;
 
     void add(Test test) { tests.push_back(test); }
 
     void run()
     {
-        auto num_passed = 0;
         for (auto&& test : tests) {
             if (test.testfn()) {
-                std::cout << GREEN << "PASS" << RESET;
-                num_passed++;
+                std::cout << GREEN << "PASS: " << RESET;
+                total_passed++;
             } else {
-                std::cout << RED << "FAIL" << RESET;
+                std::cout << RED << "FAIL: " << RESET;
             }
 
-            std::cout << ": " << test.name << '\n';
+            std::cout << test.name << '\n';
         }
 
+        total += tests.size();
+        tests.clear();
+    }
+
+    void statistics()
+    {
         std::cout.precision(4);
-        std::cout << "Passed " << 100. * ((double) num_passed) / ((double)tests.size()) << "%\n";
+        std::cout << "Passed " << 100. * ((double)total_passed) / ((double)total) << "%\n";
     }
 };

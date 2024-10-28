@@ -37,3 +37,25 @@ Vec3 Spring::force() const
 
     return Fs + Fd;
 }
+
+std::pair<double, double> Spring::lerp(Spring& spring) const {
+    Vec3 e1 = (g_manager->position(p1) - g_manager->position(p0)).normalized();
+    Vec3 e2 = (g_manager->position(spring.p1) - g_manager->position(spring.p0)).normalized();
+
+    Vec3 n = e1.cross(e2);
+    Vec3 q = g_manager->position(spring.p0) - g_manager->position(p0);
+
+    double s = q.dot(e2.cross(n)) / (e1.dot(e2.cross(n)));
+    double t = -q.dot(e1.cross(n)) / (e2.dot(e1.cross(n)));
+
+    return std::make_pair(s, t);
+}
+
+flatten bool Spring::collision(Spring& spring) const {
+    auto const [s, t] = lerp(spring);
+
+    if (s < 0. || s > 1. || t < 0. || t > 1.)
+        return false;
+
+    return true;
+}
