@@ -115,11 +115,11 @@ struct Manager {
         velocities = state.data1;
     }
 
-    inline Vec3& position(size_t i) { return positions[i]; }
-    inline Vec3& velocity(size_t i) { return velocities[i]; }
+    nodiscard inline Vec3& position(size_t i) { return positions[i]; }
+    nodiscard inline Vec3& velocity(size_t i) { return velocities[i]; }
 
-    inline Vec3 const& position(size_t i) const { return positions[i]; }
-    inline Vec3 const& velocity(size_t i) const { return velocities[i]; }
+    nodiscard inline Vec3 const& position(size_t i) const { return positions[i]; }
+    nodiscard inline Vec3 const& velocity(size_t i) const { return velocities[i]; }
 };
 
 std::shared_ptr<Manager> g_manager;
@@ -188,7 +188,7 @@ decltype(auto) euler(State& state, double h = 1. / 240.)
     return state + h * state.derivative();
 }
 
-decltype(auto) rk4(State state, double h=1. / 240.)
+decltype(auto) rk4(State& state, double h=1. / 240.)
 {
     auto K1 = state.derivative();
     auto K2 = (state + .5 * h * K1).derivative();
