@@ -8,8 +8,8 @@
 
 State::State()
 {
-    data0 = decltype(data0)(g_manager->positions);
-    data1 = decltype(data1)(g_manager->velocities);
+    data0 = decltype(data0)(g_manager->m_positions);
+    data1 = decltype(data1)(g_manager->m_velocities);
 }
 
 State State::derivative() const
@@ -22,7 +22,7 @@ State State::derivative() const
     for (auto& data : derivative.data1)
         data = Vec3::Zero();
 
-    for (auto&& spring : g_manager->springs) {
+    for (auto&& spring : g_manager->m_springs) {
         derivative.data1[spring.p0] += spring.force();
         derivative.data1[spring.p1] -= spring.force();
     }
@@ -30,12 +30,12 @@ State State::derivative() const
     return derivative;
 }
 
-State euler(State& state, double h)
+State euler(State const& state, double h)
 {
     return state + h * state.derivative();
 }
 
-State rk4(State& state, double h)
+State rk4(State const& state, double h)
 {
     auto K1 = state.derivative();
     auto K2 = (state + .5 * h * K1).derivative();

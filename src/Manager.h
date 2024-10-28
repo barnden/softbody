@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #pragma once
+#include <functional>
 #include <vector>
 
 #include "utils.h"
@@ -13,59 +14,97 @@
 #include "Spring.h"
 #include "State.h"
 
-struct Manager {
-    std::vector<Vec3> positions;
-    std::vector<Vec3> velocities;
-    std::vector<Spring> springs;
-    std::vector<Face> faces;
-    double h;
+class Manager {
+    friend State;
 
-    explicit Manager(double timestep)
-        : positions({})
-        , velocities({})
-        , springs({})
-        , h(timestep) {};
+    std::vector<Vec3> m_positions;
+    std::vector<Vec3> m_velocities;
+    std::vector<Spring> m_springs;
+    std::vector<Face> m_faces;
+    std::function<State(State const&, double)> m_integrator;
+    double m_timestep;
+
+public:
+    enum class Integrator {
+        EULER,
+        RK4,
+    };
+
+    explicit Manager(double timestep, Integrator integrator = Integrator::RK4)
+        : m_positions({})
+        , m_velocities({})
+        , m_springs({})
+        , m_timestep(timestep)
+    {
+        switch (integrator) {
+        case Integrator::EULER:
+            m_integrator = euler;
+            break;
+
+        case Integrator::RK4:
+            m_integrator = rk4;
+            break;
+        }
+    }
 
     ~Manager() = default;
 
     Particle add_particle(Vec3 position, Vec3 velocity = Vec3::Zero())
     {
-        positions.push_back(position);
-        velocities.push_back(velocity);
+        m_positions.push_back(position);
+        m_velocities.push_back(velocity);
 
-        return { positions.size() - 1 };
+        return { m_positions.size() - 1 };
     }
 
     void add_face(Face face)
     {
-        faces.push_back(face);
+        m_faces.push_back(face);
     }
 
     void add_spring(Spring spring)
     {
-        springs.push_back(spring);
+        m_springs.push_back(spring);
     }
 
     void adopt(State state)
     {
-        positions = state.data0;
-        velocities = state.data1;
+        m_positions = state.data0;
+        m_velocities = state.data1;
     }
 
     nodiscard inline Vec3 external_force() const
     {
+        // e.g. for gravity
         return { 0., -1., 0. };
     }
 
-    nodiscard inline Vec3& position(size_t i)
-    {
-        return positions[i];
+    flatten State integrate(State const& initial_state, double timestep) {
+        return m_integrator(initial_state, timestep);
     }
-    nodiscard inline Vec3& velocity(size_t i) { return velocities[i]; }
 
-    nodiscard inline Vec3 const& position(size_t i) const { return positions[i]; }
-    nodiscard inline Vec3 const& velocity(size_t i) const { return velocities[i]; }
-    nodiscard inline Face const& face(size_t i) const { return faces[i]; }
+    flatten State integrate(State const& initial_state) {
+        return m_integrator(initial_state, m_timestep);
+    }
+
+    flatten State integrate(double timestep) {
+        return m_integrator({}, timestep);
+    }
+
+    flatten State integrate() {
+        return m_integrator({}, m_timestep);
+    }
+
+    nodiscard inline Vec3& position(size_t i) { return m_positions[i]; }
+    nodiscard inline Vec3& velocity(size_t i) { return m_velocities[i]; }
+
+    nodiscard inline Vec3 const& position(size_t i) const { return m_positions[i]; }
+    nodiscard inline Vec3 const& velocity(size_t i) const { return m_velocities[i]; }
+
+    nodiscard inline Face const& face(size_t i) const { return m_faces[i]; }
+    nodiscard inline Spring const& spring(size_t i) const { return m_springs[i]; }
+
+    nodiscard inline double timestep() const { return m_timestep; }
 };
 
 extern Manager* g_manager;

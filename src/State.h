@@ -60,5 +60,5 @@ struct State {
     }
 };
 
-State euler(State& state, double h);
-State rk4(State& state, double h);
+State euler(State const& state, double h);
+State rk4(State const& state, double h);
