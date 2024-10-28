@@ -1,4 +1,4 @@
-ADD_EXECUTABLE(Test main.cpp test.h)
+ADD_EXECUTABLE(Test test.cpp test.h)
 
 FIND_PACKAGE(Eigen3 3.3 NO_MODULE)
 IF(${Eigen3_FOUND})

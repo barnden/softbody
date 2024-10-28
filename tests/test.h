@@ -46,6 +46,6 @@ struct TestManager {
     void statistics()
     {
         std::cout.precision(4);
-        std::cout << "Passed " << 100. * ((double)total_passed) / ((double)total) << "%\n";
+        std::cout << "Passed " << total_passed << "/" << total << " (" << 100. * ((double)total_passed) / ((double)total) << "%)\n";
     }
 };
