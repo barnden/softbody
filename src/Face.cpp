@@ -11,28 +11,44 @@ Face::Face(size_t v0, size_t v1, size_t v2)
     , v1(v1)
     , v2(v2)
 {
-    Vec3 p0 = g_manager->position(v0);
-    normal = (g_manager->position(v1) - p0).cross(g_manager->position(v2) - p0);
-
-    normal.normalize();
 }
 
 flatten Face::Face(Particle v0, Particle v1, Particle v2)
     : Face(v0.index, v1.index, v2.index) {};
 
-double Face::distance_to_plane(Vec3 p) const
+inline Vec3 Face::normal() const {
+    Vec3 p0 = g_manager->position(v0);
+    Vec3 N = (g_manager->position(v1) - p0).cross(g_manager->position(v2) - p0);
+
+    return N.normalized();
+}
+
+inline Vec3 Face::normal(State const& state) const {
+    Vec3 p0 = state.data0[v0];
+    Vec3 N = (state.data0[v1] - p0).cross(state.data0[v2] - p0);
+
+    return N.normalized();
+}
+
+double Face::distance_to_plane(Vec3 const& p) const
 {
-    return (p - g_manager->position(v0)).dot(normal);
+    return (p - g_manager->position(v0)).dot(normal());
+}
+
+double Face::distance_to_plane(Vec3 const& p, State const& state) const
+{
+    return (p - g_manager->position(v0)).dot(normal(state));
 }
 
 Vec2 Face::project(Vec3 p) const
 {
-    // FIXME: (1) Determine which coordinate that should be dropped on face construction so we don't do this check every single time
-    // FIXME: (2) There's definitely a way to do this with fewer comparisons; but it won't matter if we do (1)
-    if (std::abs(normal.x()) > std::abs(normal.y()) && std::abs(normal.x()) > std::abs(normal.z()))
+    Vec3 N = normal();
+
+    // FIXME: There's definitely a way to do this with fewer comparisons
+    if (std::abs(N.x()) > std::abs(N.y()) && std::abs(N.x()) > std::abs(N.z()))
         return { p.y(), p.z() };
 
-    if (std::abs(normal.y()) > std::abs(normal.x()) && std::abs(normal.y()) > std::abs(normal.z()))
+    if (std::abs(N.y()) > std::abs(N.x()) && std::abs(N.y()) > std::abs(N.z()))
         return { p.x(), p.z() };
 
     return { p.x(), p.y() };
@@ -42,10 +58,10 @@ Vec2 Face::project(Vec3 p) const
  * Vec2 Face::project(Vec3 p) const
 {
     Vec3 const& p0 = g_manager->position(v0);
-    Vec3 p_prime = p - ((p - p0).dot(normal) * normal) - p0;
+    Vec3 p_prime = p - ((p - p0).dot(normal()) * normal()) - p0;
 
     Vec3 u = (g_manager->position(v1) - p0).normalized();
-    Vec3 v = u.cross(normal);
+    Vec3 v = u.cross(normal());
 
     return { p_prime.dot(u), p_prime.dot(v) };
 }
