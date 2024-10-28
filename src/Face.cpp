@@ -13,36 +13,25 @@ Face::Face(size_t v0, size_t v1, size_t v2)
 {
 }
 
-flatten Face::Face(Particle v0, Particle v1, Particle v2)
+flatten Face::Face(Particle const& v0, Particle const& v1, Particle const& v2)
     : Face(v0.index, v1.index, v2.index) {};
 
-inline Vec3 Face::normal() const {
-    Vec3 p0 = g_manager->position(v0);
-    Vec3 N = (g_manager->position(v1) - p0).cross(g_manager->position(v2) - p0);
-
-    return N.normalized();
-}
-
-inline Vec3 Face::normal(State const& state) const {
+inline Vec3 Face::normal(State const& state) const
+{
     Vec3 p0 = state.data0[v0];
     Vec3 N = (state.data0[v1] - p0).cross(state.data0[v2] - p0);
 
     return N.normalized();
 }
 
-double Face::distance_to_plane(Vec3 const& p) const
-{
-    return (p - g_manager->position(v0)).dot(normal());
-}
-
 double Face::distance_to_plane(Vec3 const& p, State const& state) const
 {
-    return (p - g_manager->position(v0)).dot(normal(state));
+    return (p - state.data0[v0]).dot(normal(state));
 }
 
-Vec2 Face::project(Vec3 p) const
+Vec2 Face::project(Vec3 const& p, State const& state) const
 {
-    Vec3 N = normal();
+    Vec3 N = normal(state);
 
     // FIXME: There's definitely a way to do this with fewer comparisons
     if (std::abs(N.x()) > std::abs(N.y()) && std::abs(N.x()) > std::abs(N.z()))
@@ -70,12 +59,12 @@ Vec2 Face::project(Vec3 p) const
 template <typename T>
 int sgn(T val) { return (T {} < val) - (val < T {}); }
 
-flatten std::pair<double, double> Face::barycentric(Vec2 p) const
+flatten std::pair<double, double> Face::barycentric(Vec2 const& p, State const& state) const
 {
     // Project triangle and point of collision into 2D by dropping largest coordinate in normal
-    auto p0 = project(g_manager->position(v0));
-    auto p1 = project(g_manager->position(v1));
-    auto p2 = project(g_manager->position(v2));
+    auto p0 = project(state.data0[v0], state);
+    auto p1 = project(state.data0[v1], state);
+    auto p2 = project(state.data0[v2], state);
 
     // This is area of the parallelogram, not the triangle; however, the denominator uses (2 * area) so leaving it like this is OK
     double area = (Eigen::Matrix2d() << (p1 - p0).transpose(), (p2 - p0).transpose()).finished().determinant();
@@ -87,23 +76,24 @@ flatten std::pair<double, double> Face::barycentric(Vec2 p) const
     return std::make_pair(alpha, beta);
 }
 
-flatten bool Face::collision(Particle particle) const
+flatten bool Face::collision(Particle const& particle, State const& state_initial, State const& state_final) const
 {
-    Vec3 pi = particle.position();
-    Vec3 pf = particle.position() + particle.velocity() * g_manager->h;
+    Vec3 pi = state_initial.data0[particle.index];
+    Vec3 pf = state_final.data0[particle.index];
 
     // Check collision with plane
-    auto dn = distance_to_plane(pi);
-    auto dnp1 = distance_to_plane(pf);
+    auto di = distance_to_plane(pi, state_initial);
+    auto df = distance_to_plane(pf, state_final);
 
-    if (sgn(dn) == sgn(dnp1))
+    if (sgn(di) == sgn(df))
         return false;
 
     // Get point of collision with plane
-    auto f = dn / (dn - dnp1);
-    auto pc = project(particle.position() + particle.velocity() * g_manager->h * f);
+    auto f = di / (di - df);
+    auto collision_state = g_manager->integrate(state_initial, f * g_manager->timestep());
+    auto pc = project(collision_state.data0[particle.index], collision_state);
 
     // Check if barycentric coordinates lie in the triangle
-    auto [alpha, beta] = barycentric(pc);
+    auto const [alpha, beta] = barycentric(pc, collision_state);
     return (alpha > 0.) && (beta > 0.) && ((1. - alpha - beta) > 0.);
 }

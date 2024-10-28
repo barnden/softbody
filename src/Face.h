@@ -16,21 +16,17 @@ struct Face {
     size_t v2;
 
     Face(size_t v0, size_t v1, size_t v2);
-    Face(Particle v0, Particle v1, Particle v2);
+    Face(Particle const& v0, Particle const& v1, Particle const& v2);
 
-    nodiscard Vec3 normal() const;
     nodiscard Vec3 normal(State const&) const;
+    nodiscard double distance_to_plane(Vec3 const&, State const&) const;
 
-    nodiscard double distance_to_plane(Vec3 const& p) const;
-    nodiscard double distance_to_plane(Vec3 const& p, State const&) const;
+    std::pair<double, double> barycentric(Vec2 const&, State const&) const;
+    nodiscard bool collision(Particle const&, State const& initial, State const& final) const;
+    nodiscard Vec2 project(Vec3 const&, State const&) const;
 
-    std::pair<double, double> barycentric(Vec2 p) const;
-    nodiscard bool collision(Particle p) const;
-
-    nodiscard inline Vec3 force() const
+    nodiscard inline Vec3 force(State const& state) const
     {
         return Vec3::Zero();
     }
-
-    nodiscard Vec2 project(Vec3 p) const;
 };
