@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <ranges>
 
 #define nodiscard [[nodiscard]]
 
@@ -14,6 +15,9 @@
 #else
 #    define flatten __attribute__((flatten))
 #endif
+
+#define hot __attribute__((hot))
+#define enumerate(v) std::views::zip(std::views::iota(1), v)
 
 using Vec2 = Eigen::Vector2d;
 using Vec3 = Eigen::Vector3d;
