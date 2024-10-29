@@ -76,22 +76,26 @@ public:
     nodiscard inline Vec3 external_force() const
     {
         // e.g. for gravity
-        return { 0., -1., 0. };
+        return { 0., -10., 0. };
     }
 
-    flatten State integrate(State const& initial_state, double timestep) {
+    flatten State integrate(State const& initial_state, double timestep)
+    {
         return m_integrator(initial_state, timestep);
     }
 
-    flatten State integrate(State const& initial_state) {
+    flatten State integrate(State const& initial_state)
+    {
         return m_integrator(initial_state, m_timestep);
     }
 
-    flatten State integrate(double timestep) {
+    flatten State integrate(double timestep)
+    {
         return m_integrator({}, timestep);
     }
 
-    flatten State integrate() {
+    flatten State integrate()
+    {
         return m_integrator({}, m_timestep);
     }
 
@@ -105,6 +109,12 @@ public:
     nodiscard inline Spring const& spring(size_t i) const { return m_springs[i]; }
 
     nodiscard inline double timestep() const { return m_timestep; }
+
+    nodiscard inline decltype(auto) vertices() const { return m_positions; }
+    nodiscard inline decltype(auto) faces() const { return m_faces; }
+    nodiscard inline decltype(auto) springs() const { return m_springs; }
 };
+
+void create_cube();
 
 extern Simulation* g_simulation;
