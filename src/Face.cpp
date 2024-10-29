@@ -5,32 +5,32 @@
  */
 #include "Face.h"
 #include "Manager.h"
-
+#include "Scene.h"
+#include <iostream>
 Face::Face(size_t v0, size_t v1, size_t v2)
-    : v0(v0)
-    , v1(v1)
-    , v2(v2)
-{
-}
+    : m_v0(v0)
+    , m_v1(v1)
+    , m_v2(v2) {};
 
 flatten Face::Face(Particle const& v0, Particle const& v1, Particle const& v2)
     : Face(v0.index, v1.index, v2.index) {};
 
 inline Vec3 Face::normal(State const& state) const
 {
-    Vec3 p0 = state.data0[v0];
-    Vec3 N = (state.data0[v1] - p0).cross(state.data0[v2] - p0);
+    Vec3 p0 = state.data0[m_v0];
+    Vec3 N = (state.data0[m_v1] - p0).cross(state.data0[m_v2] - p0);
 
     return N.normalized();
 }
 
-double Face::distance_to_plane(Vec3 const& p, State const& state) const
+double inline Face::distance_to_plane(Vec3 const& p, State const& state) const
 {
-    return (p - state.data0[v0]).dot(normal(state));
+    return (p - state.data0[m_v0]).dot(normal(state));
 }
 
 Vec2 Face::project(Vec3 const& p, State const& state) const
 {
+    // Project into 2D plane by dropping largest coordinate
     Vec3 N = normal(state);
 
     // FIXME: There's definitely a way to do this with fewer comparisons
@@ -44,8 +44,10 @@ Vec2 Face::project(Vec3 const& p, State const& state) const
 }
 
 /**
- * Vec2 Face::project(Vec3 p) const
+Vec2 Face::project(Vec3 p) const
 {
+    // Project into 2D plane containing the face
+
     Vec3 const& p0 = g_manager->position(v0);
     Vec3 p_prime = p - ((p - p0).dot(normal()) * normal()) - p0;
 
@@ -59,13 +61,8 @@ Vec2 Face::project(Vec3 const& p, State const& state) const
 template <typename T>
 int sgn(T val) { return (T {} < val) - (val < T {}); }
 
-flatten std::pair<double, double> Face::barycentric(Vec2 const& p, State const& state) const
+inline decltype(auto) barycentric(Vec2 const& p, Vec2 const& p0, Vec2 const& p1, Vec2 const& p2)
 {
-    // Project triangle and point of collision into 2D by dropping largest coordinate in normal
-    auto p0 = project(state.data0[v0], state);
-    auto p1 = project(state.data0[v1], state);
-    auto p2 = project(state.data0[v2], state);
-
     // This is area of the parallelogram, not the triangle; however, the denominator uses (2 * area) so leaving it like this is OK
     double area = (Eigen::Matrix2d() << (p1 - p0).transpose(), (p2 - p0).transpose()).finished().determinant();
 
@@ -74,6 +71,17 @@ flatten std::pair<double, double> Face::barycentric(Vec2 const& p, State const& 
     double beta = (p0.x() * p1.y() - p0.y() * p1.x() + (p0.y() - p1.y()) * p.x() + (p1.x() - p0.x()) * p.y()) / area;
 
     return std::make_pair(alpha, beta);
+}
+
+flatten std::pair<double, double> Face::barycentric(Vec2 const& p, State const& state) const
+{
+    // Project triangle and point of collision into 2D by dropping largest coordinate in normal
+    auto const proj = std::bind(&Face::project, this, std::placeholders::_1, state);
+    auto p0 = proj(state.data0[m_v0]);
+    auto p1 = proj(state.data0[m_v1]);
+    auto p2 = proj(state.data0[m_v2]);
+
+    return ::barycentric(p, p0, p1, p2);
 }
 
 flatten bool Face::collision(Particle const& particle, State const& state_initial, State const& state_final) const
@@ -95,5 +103,47 @@ flatten bool Face::collision(Particle const& particle, State const& state_initia
 
     // Check if barycentric coordinates lie in the triangle
     auto const [alpha, beta] = barycentric(pc, collision_state);
-    return (alpha > 0.) && (beta > 0.) && ((1. - alpha - beta) > 0.);
+    return (alpha >= 0.) && (beta >= 0.) && ((1. - alpha - beta) >= 0.);
+}
+
+// flatten decltype(auto) lerp(size_t p0, size_t p1, size_t q0, size_t q1, State const& state)
+// {
+//     Vec3 e1 = (state.data0[p1] - state.data0[p0]).normalized();
+//     Vec3 e2 = (state.data0[q1] - state.data0[q0]).normalized();
+
+//     Vec3 n = e1.cross(e2);
+//     Vec3 q = state.data0[q0] - state.data0[p0];
+
+//     double s = q.dot(e2.cross(n)) / (e1.dot(e2.cross(n)));
+//     double t = q.dot(n.cross(e1)) / (e1.dot(e1.cross(n)));
+
+//     Vec3 pa = state.data0[p0] + s * e1;
+//     Vec3 qa = state.data0[q0] + t * e2;
+//     Vec3 m = qa - pa;
+
+//     return std::make_tuple(s, t, m);
+// }
+
+StaticFace::StaticFace(size_t v0, size_t v1, size_t v2)
+    : Face(v0, v1, v2)
+{
+    auto const& p0 = g_scene->position(v0);
+    m_normal = (g_scene->position(v1) - p0).cross(g_scene->position(v2) - p0);
+    m_normal.normalize();
+}
+
+flatten double inline StaticFace::distance_to_plane(Vec3 const& p, State const&) const
+{
+    return (p - g_scene->position(m_v0)).dot(m_normal);
+}
+
+flatten std::pair<double, double> StaticFace::barycentric(Vec2 const& p, State const& state) const
+{
+    // Project triangle and point of collision into 2D by dropping largest coordinate in normal
+    auto const proj = std::bind(&StaticFace::project, this, std::placeholders::_1, state);
+    auto p0 = proj(g_scene->position(m_v0));
+    auto p1 = proj(g_scene->position(m_v1));
+    auto p2 = proj(g_scene->position(m_v2));
+
+    return ::barycentric(p, p0, p1, p2);
 }
