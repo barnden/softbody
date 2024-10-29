@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "Face.h"
-#include "Simulation.h"
 #include "Scene.h"
+#include "Simulation.h"
 #include <iostream>
 Face::Face(size_t v0, size_t v1, size_t v2)
     : m_v0(v0)
@@ -28,35 +28,33 @@ double inline Face::distance_to_plane(Vec3 const& p, State const& state) const
     return (p - state.data0[m_v0]).dot(normal(state));
 }
 
+// inline Vec2 Face::project(Vec3 const& p, State const& state) const
+// {
+//     // Project into 2D plane by dropping largest coordinate
+//     Vec3 N = normal(state);
+
+//     // FIXME: There's definitely a way to do this with fewer comparisons
+//     if (std::abs(N.x()) > std::abs(N.y()) && std::abs(N.x()) > std::abs(N.z()))
+//         return { p.y(), p.z() };
+
+//     if (std::abs(N.y()) > std::abs(N.x()) && std::abs(N.y()) > std::abs(N.z()))
+//         return { p.x(), p.z() };
+
+//     return { p.x(), p.y() };
+// }
+
 inline Vec2 Face::project(Vec3 const& p, State const& state) const
 {
-    // Project into 2D plane by dropping largest coordinate
-    Vec3 N = normal(state);
-
-    // FIXME: There's definitely a way to do this with fewer comparisons
-    if (std::abs(N.x()) > std::abs(N.y()) && std::abs(N.x()) > std::abs(N.z()))
-        return { p.y(), p.z() };
-
-    if (std::abs(N.y()) > std::abs(N.x()) && std::abs(N.y()) > std::abs(N.z()))
-        return { p.x(), p.z() };
-
-    return { p.x(), p.y() };
-}
-
-/**
-Vec2 Face::project(Vec3 p) const
-{
     // Project into 2D plane containing the face
+    Vec3 n = normal(state);
+    Vec3 const& p0 = state.data0[m_v0];
+    Vec3 p_prime = p - ((p - p0).dot(n) * n) - p0;
 
-    Vec3 const& p0 = g_simulation->position(v0);
-    Vec3 p_prime = p - ((p - p0).dot(normal()) * normal()) - p0;
-
-    Vec3 u = (g_simulation->position(v1) - p0).normalized();
-    Vec3 v = u.cross(normal());
+    Vec3 u = (state.data0[m_v1] - p0).normalized();
+    Vec3 v = u.cross(n);
 
     return { p_prime.dot(u), p_prime.dot(v) };
 }
- */
 
 inline decltype(auto) barycentric(Vec2 const& p, Vec2 const& p0, Vec2 const& p1, Vec2 const& p2)
 {
@@ -86,7 +84,7 @@ int sgn(T val) { return (T {} < val) - (val < T {}); }
 
 /**
  * Detect collision of a (moving) face against a static point
- * 
+ *
  * Using this with StaticFace always returns the same result
  */
 flatten std::optional<CollisionRecord> Face::collision(
@@ -108,12 +106,17 @@ flatten std::optional<CollisionRecord> Face::collision(
 
     // Check if barycentric coordinates lie in the triangle
     auto const [alpha, beta] = barycentric(pc, collision_state);
-    if ((alpha < 0) || (beta < 0.) || ((1. - alpha - beta) < 0.))
+    auto const gamma = 1. - alpha - beta;
+    if ((alpha < 0) || (beta < 0.) || (gamma < 0.))
         return std::nullopt;
 
     return CollisionRecord {
+        .type = CollisionRecord::Type::STATIC,
+        .state = collision_state,
         .fractional_timestep = f,
-        .collision_normal = normal(collision_state)
+        .indices = { m_v0, m_v1, m_v2 },
+        .weights = { alpha, beta, gamma },
+        .normal = normal(collision_state),
     };
 }
 
@@ -142,12 +145,17 @@ flatten std::optional<CollisionRecord> Face::collision(
 
     // Check if barycentric coordinates lie in the triangle
     auto const [alpha, beta] = barycentric(pc, collision_state);
-    if ((alpha < 0) || (beta < 0.) || ((1. - alpha - beta) < 0.))
+    auto const gamma = 1. - alpha - beta;
+    if ((alpha < 0) || (beta < 0.) || (gamma < 0.))
         return std::nullopt;
 
     return CollisionRecord {
+        .type = CollisionRecord::Type::STATIC,
+        .state = collision_state,
         .fractional_timestep = f,
-        .collision_normal = normal(collision_state)
+        .indices = { particle.index, -1uz, -1uz },
+        .weights = { 1., 0., 0. },
+        .normal = normal(collision_state),
     };
 }
 
@@ -191,4 +199,16 @@ flatten std::pair<double, double> StaticFace::barycentric(Vec2 const& p, State c
     auto p2 = proj(g_scene->position(m_v2));
 
     return ::barycentric(p, p0, p1, p2);
+}
+
+inline Vec2 StaticFace::project(Vec3 const& p, State const& state) const
+{
+    // Project into 2D plane containing the face
+    Vec3 const& p0 = g_scene->position(m_v0);
+    Vec3 p_prime = p - ((p - p0).dot(m_normal) * m_normal) - p0;
+
+    Vec3 u = (g_scene->position(m_v1) - p0).normalized();
+    Vec3 v = u.cross(m_normal);
+
+    return { p_prime.dot(u), p_prime.dot(v) };
 }

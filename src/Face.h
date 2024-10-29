@@ -14,8 +14,18 @@
 #include "State.h"
 
 struct CollisionRecord {
+    enum Type {
+        STATIC,
+        DYNAMIC
+    };
+
+    Type type;
+    State state;
     double fractional_timestep;
-    Vec3 collision_normal;
+    size_t indices[3];
+    double weights[3];
+
+    Vec3 normal = Vec3::Zero();
 };
 
 class Face {
@@ -29,7 +39,7 @@ public:
     Face(Particle const& v0, Particle const& v1, Particle const& v2);
 
     nodiscard virtual Vec3 normal(State const&) const;
-    nodiscard Vec2 project(Vec3 const&, State const&) const;
+    nodiscard virtual Vec2 project(Vec3 const&, State const&) const;
 
     nodiscard virtual double distance_to_plane(Vec3 const&, State const&) const;
     nodiscard virtual std::pair<double, double> barycentric(Vec2 const&, State const&) const;
@@ -63,6 +73,7 @@ public:
 
     nodiscard Vec3 const& normal() const { return m_normal; }
     nodiscard virtual Vec3 normal(State const&) const override { return m_normal; }
+    nodiscard virtual Vec2 project(Vec3 const&, State const&) const override;
     nodiscard virtual double distance_to_plane(Vec3 const& p, State const&) const override;
     nodiscard virtual std::pair<double, double> barycentric(Vec2 const& p, State const&) const override;
 };
