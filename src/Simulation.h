@@ -73,6 +73,8 @@ public:
         m_velocities = state.data1;
     }
 
+    void step(double max_time = 1. / 60.);
+
     nodiscard inline Vec3 external_force() const
     {
         // e.g. for gravity

@@ -20,7 +20,7 @@ State State::derivative() const
     std::swap(derivative.data0, derivative.data1);
 
     for (auto& data : derivative.data1)
-        data = Vec3::Zero();
+        data = g_simulation->external_force();
 
     for (auto&& spring : g_simulation->m_springs) {
         Vec3 spring_force = spring.force(*this);
