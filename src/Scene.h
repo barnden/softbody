@@ -33,6 +33,9 @@ public:
 
     Vec3 const& position(size_t i) const { return m_positions[i]; }
     StaticFace const& face(size_t i) const { return m_faces[i]; }
+
+    decltype(auto) vertices() const { return m_positions; }
+    decltype(auto) faces() const { return m_faces; }
 };
 
 extern Scene* g_scene;
