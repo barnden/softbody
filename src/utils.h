@@ -17,7 +17,7 @@
 #endif
 
 #define hot __attribute__((hot))
-#define enumerate(v) std::views::zip(std::views::iota(1), v)
+#define enumerate(v) std::views::zip(std::views::iota(0), v)
 
 using Vec2 = Eigen::Vector2d;
 using Vec3 = Eigen::Vector3d;
