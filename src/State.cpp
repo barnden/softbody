@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "State.h"
-#include "Manager.h"
+#include "Simulation.h"
 
 State::State()
 {
-    data0 = decltype(data0)(g_manager->m_positions);
-    data1 = decltype(data1)(g_manager->m_velocities);
+    data0 = decltype(data0)(g_simulation->m_positions);
+    data1 = decltype(data1)(g_simulation->m_velocities);
 }
 
 State State::derivative() const
@@ -22,7 +22,7 @@ State State::derivative() const
     for (auto& data : derivative.data1)
         data = Vec3::Zero();
 
-    for (auto&& spring : g_manager->m_springs) {
+    for (auto&& spring : g_simulation->m_springs) {
         Vec3 spring_force = spring.force(*this);
 
         derivative.data1[spring.p0] += spring_force;

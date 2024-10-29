@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "Particle.h"
-#include "Manager.h"
+#include "Simulation.h"
 
-Vec3& Particle::position() const { return g_manager->position(index); }
-Vec3& Particle::velocity() const { return g_manager->velocity(index); }
+Vec3& Particle::position() const { return g_simulation->position(index); }
+Vec3& Particle::velocity() const { return g_simulation->velocity(index); }

@@ -14,7 +14,7 @@
 #include "Spring.h"
 #include "State.h"
 
-class Manager {
+class Simulation {
     friend State;
 
     std::vector<Vec3> m_positions;
@@ -30,7 +30,7 @@ public:
         RK4,
     };
 
-    explicit Manager(double timestep, Integrator integrator = Integrator::RK4)
+    explicit Simulation(double timestep, Integrator integrator = Integrator::RK4)
         : m_positions({})
         , m_velocities({})
         , m_springs({})
@@ -47,7 +47,7 @@ public:
         }
     }
 
-    ~Manager() = default;
+    ~Simulation() = default;
 
     Particle add_particle(Vec3 position, Vec3 velocity = Vec3::Zero())
     {
@@ -107,4 +107,4 @@ public:
     nodiscard inline double timestep() const { return m_timestep; }
 };
 
-extern Manager* g_manager;
+extern Simulation* g_simulation;

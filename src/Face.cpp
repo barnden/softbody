@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "Face.h"
-#include "Manager.h"
+#include "Simulation.h"
 #include "Scene.h"
 #include <iostream>
 Face::Face(size_t v0, size_t v1, size_t v2)
@@ -48,10 +48,10 @@ Vec2 Face::project(Vec3 p) const
 {
     // Project into 2D plane containing the face
 
-    Vec3 const& p0 = g_manager->position(v0);
+    Vec3 const& p0 = g_simulation->position(v0);
     Vec3 p_prime = p - ((p - p0).dot(normal()) * normal()) - p0;
 
-    Vec3 u = (g_manager->position(v1) - p0).normalized();
+    Vec3 u = (g_simulation->position(v1) - p0).normalized();
     Vec3 v = u.cross(normal());
 
     return { p_prime.dot(u), p_prime.dot(v) };
@@ -103,7 +103,7 @@ flatten std::optional<CollisionRecord> Face::collision(
 
     // Get point of collision with plane
     auto f = di / (di - df);
-    auto collision_state = g_manager->integrate(state_initial, f * g_manager->timestep());
+    auto collision_state = g_simulation->integrate(state_initial, f * g_simulation->timestep());
     auto pc = project(position, collision_state);
 
     // Check if barycentric coordinates lie in the triangle
@@ -137,7 +137,7 @@ flatten std::optional<CollisionRecord> Face::collision(
 
     // Get point of collision with plane
     auto f = di / (di - df);
-    auto collision_state = g_manager->integrate(state_initial, f * g_manager->timestep());
+    auto collision_state = g_simulation->integrate(state_initial, f * g_simulation->timestep());
     auto pc = project(collision_state.data0[particle.index], collision_state);
 
     // Check if barycentric coordinates lie in the triangle

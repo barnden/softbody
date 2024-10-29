@@ -9,9 +9,9 @@
 #include <ranges>
 
 #include "utils.h"
-#include "Manager.h"
+#include "Simulation.h"
 
-Manager* g_manager = new Manager(1. / 240.);
+Simulation* g_simulation = new Simulation(1. / 240.);
 
 int main()
 {

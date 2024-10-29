@@ -4,93 +4,93 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "test.h"
-#include "Manager.h"
+#include "Simulation.h"
 #include "Scene.h"
 
 TestManager manager {};
-Manager* g_manager;
+Simulation* g_simulation;
 Scene* g_scene;
 
 void create_cube()
 {
-    if (g_manager != nullptr)
-        delete g_manager;
+    if (g_simulation != nullptr)
+        delete g_simulation;
 
-    g_manager = new Manager(1. / 240.);
+    g_simulation = new Simulation(1. / 240.);
 
-    auto p0 = g_manager->add_particle({ 0., 0., 0. });
-    auto p1 = g_manager->add_particle({ 0., 1., 0. });
-    auto p2 = g_manager->add_particle({ 1., 0., 0. });
-    auto p3 = g_manager->add_particle({ 1., 1., 0. });
-    auto p4 = g_manager->add_particle({ 0., 0., 1. });
-    auto p5 = g_manager->add_particle({ 0., 1., 1. });
-    auto p6 = g_manager->add_particle({ 1., 0., 1. });
-    auto p7 = g_manager->add_particle({ 1., 1., 1. });
+    auto p0 = g_simulation->add_particle({ 0., 0., 0. });
+    auto p1 = g_simulation->add_particle({ 0., 1., 0. });
+    auto p2 = g_simulation->add_particle({ 1., 0., 0. });
+    auto p3 = g_simulation->add_particle({ 1., 1., 0. });
+    auto p4 = g_simulation->add_particle({ 0., 0., 1. });
+    auto p5 = g_simulation->add_particle({ 0., 1., 1. });
+    auto p6 = g_simulation->add_particle({ 1., 0., 1. });
+    auto p7 = g_simulation->add_particle({ 1., 1., 1. });
 
     {
-        g_manager->add_face({ p0, p1, p2 });
-        g_manager->add_face({ p3, p1, p2 });
+        g_simulation->add_face({ p0, p1, p2 });
+        g_simulation->add_face({ p3, p1, p2 });
 
-        g_manager->add_face({ p4, p5, p6 });
-        g_manager->add_face({ p7, p5, p6 });
+        g_simulation->add_face({ p4, p5, p6 });
+        g_simulation->add_face({ p7, p5, p6 });
 
-        g_manager->add_face({ p0, p2, p4 });
-        g_manager->add_face({ p6, p2, p4 });
+        g_simulation->add_face({ p0, p2, p4 });
+        g_simulation->add_face({ p6, p2, p4 });
 
-        g_manager->add_face({ p0, p1, p4 });
-        g_manager->add_face({ p5, p1, p4 });
+        g_simulation->add_face({ p0, p1, p4 });
+        g_simulation->add_face({ p5, p1, p4 });
 
-        g_manager->add_face({ p1, p3, p5 });
-        g_manager->add_face({ p7, p3, p5 });
+        g_simulation->add_face({ p1, p3, p5 });
+        g_simulation->add_face({ p7, p3, p5 });
 
-        g_manager->add_face({ p2, p3, p6 });
-        g_manager->add_face({ p7, p3, p6 });
+        g_simulation->add_face({ p2, p3, p6 });
+        g_simulation->add_face({ p7, p3, p6 });
     }
 
     { // Square face edge connectivity
-        g_manager->add_spring({ p0, p1 });
-        g_manager->add_spring({ p0, p2 });
-        g_manager->add_spring({ p1, p3 });
-        g_manager->add_spring({ p2, p3 });
+        g_simulation->add_spring({ p0, p1 });
+        g_simulation->add_spring({ p0, p2 });
+        g_simulation->add_spring({ p1, p3 });
+        g_simulation->add_spring({ p2, p3 });
 
-        g_manager->add_spring({ p4, p5 });
-        g_manager->add_spring({ p4, p6 });
-        g_manager->add_spring({ p7, p5 });
-        g_manager->add_spring({ p7, p6 });
+        g_simulation->add_spring({ p4, p5 });
+        g_simulation->add_spring({ p4, p6 });
+        g_simulation->add_spring({ p7, p5 });
+        g_simulation->add_spring({ p7, p6 });
     }
 
     { // Edges connecting corners, vertically
-        g_manager->add_spring({ p0, p4 });
-        g_manager->add_spring({ p1, p5 });
-        g_manager->add_spring({ p2, p6 });
-        g_manager->add_spring({ p3, p7 });
+        g_simulation->add_spring({ p0, p4 });
+        g_simulation->add_spring({ p1, p5 });
+        g_simulation->add_spring({ p2, p6 });
+        g_simulation->add_spring({ p3, p7 });
     }
 
     { // Cross edges across each face
-        g_manager->add_spring({ p0, p3 });
-        g_manager->add_spring({ p1, p2 });
+        g_simulation->add_spring({ p0, p3 });
+        g_simulation->add_spring({ p1, p2 });
 
-        g_manager->add_spring({ p4, p7 });
-        g_manager->add_spring({ p5, p6 });
+        g_simulation->add_spring({ p4, p7 });
+        g_simulation->add_spring({ p5, p6 });
 
-        g_manager->add_spring({ p0, p6 });
-        g_manager->add_spring({ p2, p4 });
+        g_simulation->add_spring({ p0, p6 });
+        g_simulation->add_spring({ p2, p4 });
 
-        g_manager->add_spring({ p0, p5 });
-        g_manager->add_spring({ p1, p4 });
+        g_simulation->add_spring({ p0, p5 });
+        g_simulation->add_spring({ p1, p4 });
 
-        g_manager->add_spring({ p1, p7 });
-        g_manager->add_spring({ p3, p5 });
+        g_simulation->add_spring({ p1, p7 });
+        g_simulation->add_spring({ p3, p5 });
 
-        g_manager->add_spring({ p2, p7 });
-        g_manager->add_spring({ p3, p6 });
+        g_simulation->add_spring({ p2, p7 });
+        g_simulation->add_spring({ p3, p6 });
     }
 
     { // Internal diagonals
-        g_manager->add_spring({ p0, p7 });
-        g_manager->add_spring({ p1, p6 });
-        g_manager->add_spring({ p3, p4 });
-        g_manager->add_spring({ p2, p5 });
+        g_simulation->add_spring({ p0, p7 });
+        g_simulation->add_spring({ p1, p6 });
+        g_simulation->add_spring({ p3, p4 });
+        g_simulation->add_spring({ p2, p5 });
     }
 }
 
@@ -99,16 +99,16 @@ int main()
     create_cube();
 
     {
-        auto face = g_manager->face(0);
+        auto face = g_simulation->face(0);
 
         Vec3 normal = face.normal(State {});
 
-        auto const& v0 = g_manager->position(face.v0());
-        auto const& v1 = g_manager->position(face.v1());
-        auto const& v2 = g_manager->position(face.v2());
+        auto const& v0 = g_simulation->position(face.v0());
+        auto const& v1 = g_simulation->position(face.v1());
+        auto const& v2 = g_simulation->position(face.v2());
 
         auto state_initial = State {};
-        auto state_final = g_manager->integrate(state_initial);
+        auto state_final = g_simulation->integrate(state_initial);
 
         Vec3 midpoint = (v0 + v1 + v2) / 3.;
 
@@ -137,19 +137,19 @@ int main()
         manager.add({ "Face::barycentric (midpoint)", [&]() { return test_barycentric(midpoint, 1. / 3., 1. / 3., 1. / 3.); } });
 
         manager.add({ "Face::collision (midpoint, expected)", [&]() {
-                         Vec3 position = midpoint + face.normal(state_initial) * g_manager->timestep();
+                         Vec3 position = midpoint + face.normal(state_initial) * g_simulation->timestep();
                          Vec3 velocity = -face.normal(state_initial);
 
-                         auto particle = g_manager->add_particle(position, velocity);
-                         return face.collision(particle, State {}, g_manager->integrate()).has_value();
+                         auto particle = g_simulation->add_particle(position, velocity);
+                         return face.collision(particle, State {}, g_simulation->integrate()).has_value();
                      } });
 
         manager.add({ "Face::collision (midpoint, no collision)", [&]() {
-                         Vec3 position = midpoint + (1. + g_manager->timestep()) * (face.normal(state_initial) * g_manager->timestep());
+                         Vec3 position = midpoint + (1. + g_simulation->timestep()) * (face.normal(state_initial) * g_simulation->timestep());
                          Vec3 velocity = -face.normal(state_initial);
 
-                         auto particle = g_manager->add_particle(position, velocity);
-                         return !face.collision(particle, State {}, g_manager->integrate()).has_value();
+                         auto particle = g_simulation->add_particle(position, velocity);
+                         return !face.collision(particle, State {}, g_simulation->integrate()).has_value();
                      } });
 
         manager.run();
@@ -179,14 +179,14 @@ int main()
         delete g_scene;
     }
 
-    delete g_manager;
+    delete g_simulation;
 
     {
-        g_manager = new Manager(1. / 240.);
+        g_simulation = new Simulation(1. / 240.);
         g_scene = new Scene();
 
         {
-            auto p0 = g_manager->add_particle({ 0., 0., g_manager->timestep() }, { 0., 0., -1. });
+            auto p0 = g_simulation->add_particle({ 0., 0., g_simulation->timestep() }, { 0., 0., -1. });
         }
 
         {
@@ -202,7 +202,7 @@ int main()
                           StaticFace face = g_scene->face(0);
 
                           auto initial_state = State {};
-                          auto final_state = g_manager->integrate(initial_state);
+                          auto final_state = g_simulation->integrate(initial_state);
 
                           Vec3 normal = face.normal({});
 
@@ -211,26 +211,26 @@ int main()
 
         manager.run();
 
-        delete g_manager;
+        delete g_simulation;
         delete g_scene;
     }
 
     {
-        g_manager = new Manager(1. / 240.);
+        g_simulation = new Simulation(1. / 240.);
 
-        auto p0 = g_manager->add_particle({ 0., 0., 0. });
-        auto p1 = g_manager->add_particle({ 0., 1., 0. });
-        auto p2 = g_manager->add_particle({ -.5, .5, 0. });
-        auto p3 = g_manager->add_particle({ .5, .5, 0. });
-        auto p4 = g_manager->add_particle({ 0., .5, 0. });
+        auto p0 = g_simulation->add_particle({ 0., 0., 0. });
+        auto p1 = g_simulation->add_particle({ 0., 1., 0. });
+        auto p2 = g_simulation->add_particle({ -.5, .5, 0. });
+        auto p3 = g_simulation->add_particle({ .5, .5, 0. });
+        auto p4 = g_simulation->add_particle({ 0., .5, 0. });
 
-        g_manager->add_spring({ p0, p1 });
-        g_manager->add_spring({ p2, p3 });
-        g_manager->add_spring({ p4, p3 });
+        g_simulation->add_spring({ p0, p1 });
+        g_simulation->add_spring({ p2, p3 });
+        g_simulation->add_spring({ p4, p3 });
 
-        auto spring1 = g_manager->spring(0);
-        auto spring2 = g_manager->spring(1);
-        auto spring3 = g_manager->spring(2);
+        auto spring1 = g_simulation->spring(0);
+        auto spring2 = g_simulation->spring(1);
+        auto spring3 = g_simulation->spring(2);
 
         manager.add({ "Edge::lerp (orthogonal, overlapping XYZ midpoint-midpoint) ", [&]() {
                          auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
@@ -260,29 +260,29 @@ int main()
 
         manager.add({ "Edge::collision (orthogonal, expected, overlapping XYZ midpoint-midpoint) ", [&]() {
                          auto initial_state = State {};
-                         auto final_state = g_manager->integrate(initial_state);
+                         auto final_state = g_simulation->integrate(initial_state);
                          auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
 
                          return collision;
                      } });
 
         manager.run();
-        delete g_manager;
+        delete g_simulation;
     }
 
     {
-        g_manager = new Manager(1. / 240.);
+        g_simulation = new Simulation(1. / 240.);
 
-        auto p0 = g_manager->add_particle({ 0., 0., 0. });
-        auto p1 = g_manager->add_particle({ 0., 1., 0. });
-        auto p2 = g_manager->add_particle({ -.5, .5, 1. / 240. }, { 0., 0., -1. });
-        auto p3 = g_manager->add_particle({ .5, .5, 1. / 240. }, { 0., 0., -1. });
+        auto p0 = g_simulation->add_particle({ 0., 0., 0. });
+        auto p1 = g_simulation->add_particle({ 0., 1., 0. });
+        auto p2 = g_simulation->add_particle({ -.5, .5, 1. / 240. }, { 0., 0., -1. });
+        auto p3 = g_simulation->add_particle({ .5, .5, 1. / 240. }, { 0., 0., -1. });
 
-        g_manager->add_spring({ p0, p1 });
-        g_manager->add_spring({ p2, p3 });
+        g_simulation->add_spring({ p0, p1 });
+        g_simulation->add_spring({ p2, p3 });
 
-        auto spring1 = g_manager->spring(0);
-        auto spring2 = g_manager->spring(1);
+        auto spring1 = g_simulation->spring(0);
+        auto spring2 = g_simulation->spring(1);
 
         manager.add({ "Edge::lerp (orthogonal, overlapping XY midpoint-midpoint) ", [&]() {
                          auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
@@ -299,7 +299,7 @@ int main()
 
         manager.add({ "Edge::collision (orthogonal, overlapping XY midpoint-midpoint) ", [&]() {
                          auto initial_state = State {};
-                         auto final_state = g_manager->integrate(initial_state);
+                         auto final_state = g_simulation->integrate(initial_state);
 
                          {
                              // Springs are setup so that they do not intersect initially, but after integration they will
@@ -315,7 +315,7 @@ int main()
                      } });
 
         manager.run();
-        delete g_manager;
+        delete g_simulation;
     }
 
     manager.statistics();

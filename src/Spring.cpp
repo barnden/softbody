@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "Spring.h"
-#include "Manager.h"
+#include "Simulation.h"
 #include "Particle.h"
 #include "State.h"
 
@@ -14,7 +14,7 @@ Spring::Spring(size_t p0, size_t p1, double k, double d)
     , k(k)
     , d(d)
 {
-    L0 = (g_manager->position(p1) - g_manager->position(p0)).norm();
+    L0 = (g_simulation->position(p1) - g_simulation->position(p0)).norm();
 }
 
 Spring::Spring(Particle const& p0, Particle const& p1, double k, double d)
@@ -49,7 +49,7 @@ std::tuple<double, double, Vec3> Spring::lerp(Spring const& spring, State const&
     Vec3 q = state.data0[spring.p0] - state.data0[p0];
 
     double s = q.dot(e2.cross(n)) / (e1.dot(e2.cross(n)));
-    double t = -q.dot(e1.cross(n)) / (e2.dot(e1.cross(n)));
+    double t = q.dot(n.cross(e1)) / (e2.dot(e1.cross(n)));
 
     Vec3 pa = state.data0[p0] + s * e1;
     Vec3 qa = state.data0[spring.p0] + t * e2;
