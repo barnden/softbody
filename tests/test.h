@@ -16,6 +16,7 @@ constexpr std::string RESET = "\e[0m";
 
 struct Test {
     std::string name;
+    std::string location;
     std::function<bool()> testfn;
 };
 
@@ -30,13 +31,11 @@ struct TestManager {
     {
         for (auto&& test : tests) {
             if (test.testfn()) {
-                std::cout << GREEN << "PASS: " << RESET;
+                std::cout << GREEN << "PASS: " << RESET << test.name << '\n';
                 total_passed++;
             } else {
-                std::cout << RED << "FAIL: " << RESET;
+                std::cout << RED << "FAIL: " << RESET << test.name << " (" << test.location << ")\n";
             }
-
-            std::cout << test.name << '\n';
         }
 
         total += tests.size();

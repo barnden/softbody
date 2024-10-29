@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 #include "test.h"
-#include "Simulation.h"
 #include "Scene.h"
+#include "Simulation.h"
 
 TestManager manager {};
 Simulation* g_simulation;
 Scene* g_scene;
+
+#define __stringify_helper(x) #x
+#define __stringify(x)        __stringify_helper(x)
+#define location              __FILE__ ":" __stringify(__LINE__)
 
 int main()
 {
@@ -29,7 +33,7 @@ int main()
 
         Vec3 midpoint = (v0 + v1 + v2) / 3.;
 
-        manager.add({ "Face::distance_to_plane",
+        manager.add({ "Face::distance_to_plane", location,
                       [&]() -> bool {
                           Vec3 normal = face.normal(state_initial);
                           Vec3 p0 = v0 + normal;
@@ -48,26 +52,28 @@ int main()
             return std::abs(alpha - exp_alpha) < tol && std::abs(beta - exp_beta) < tol && std::abs(gamma - exp_gamma) < tol;
         };
 
-        manager.add({ "Face::barycentric (vertex, 0)", [&]() { return test_barycentric(v0, 0., 0., 1.); } });
-        manager.add({ "Face::barycentric (vertex, 1)", [&]() { return test_barycentric(v1, 1., 0., 0.); } });
-        manager.add({ "Face::barycentric (vertex, 2)", [&]() { return test_barycentric(v2, 0., 1., 0.); } });
-        manager.add({ "Face::barycentric (midpoint)", [&]() { return test_barycentric(midpoint, 1. / 3., 1. / 3., 1. / 3.); } });
+        manager.add({ "Face::barycentric (vertex, 0)", location, [&]() { return test_barycentric(v0, 0., 0., 1.); } });
+        manager.add({ "Face::barycentric (vertex, 1)", location, [&]() { return test_barycentric(v1, 1., 0., 0.); } });
+        manager.add({ "Face::barycentric (vertex, 2)", location, [&]() { return test_barycentric(v2, 0., 1., 0.); } });
+        manager.add({ "Face::barycentric (midpoint)", location, [&]() { return test_barycentric(midpoint, 1. / 3., 1. / 3., 1. / 3.); } });
 
-        manager.add({ "Face::collision (midpoint, expected)", [&]() {
-                         Vec3 position = midpoint + face.normal(state_initial) * g_simulation->timestep();
-                         Vec3 velocity = -face.normal(state_initial);
+        manager.add({ "Face::collision (midpoint, expected)", location,
+                      [&]() {
+                          Vec3 position = midpoint + face.normal(state_initial) * g_simulation->timestep();
+                          Vec3 velocity = -face.normal(state_initial);
 
-                         auto particle = g_simulation->add_particle(position, velocity);
-                         return face.collision(particle, State {}, g_simulation->integrate()).has_value();
-                     } });
+                          auto particle = g_simulation->add_particle(position, velocity);
+                          return face.collision(particle, State {}, g_simulation->integrate()).has_value();
+                      } });
 
-        manager.add({ "Face::collision (midpoint, no collision)", [&]() {
-                         Vec3 position = midpoint + (1. + g_simulation->timestep()) * (face.normal(state_initial) * g_simulation->timestep());
-                         Vec3 velocity = -face.normal(state_initial);
+        manager.add({ "Face::collision (midpoint, no collision)", location,
+                      [&]() {
+                          Vec3 position = midpoint + (1. + g_simulation->timestep()) * (face.normal(state_initial) * g_simulation->timestep());
+                          Vec3 velocity = -face.normal(state_initial);
 
-                         auto particle = g_simulation->add_particle(position, velocity);
-                         return !face.collision(particle, State {}, g_simulation->integrate()).has_value();
-                     } });
+                          auto particle = g_simulation->add_particle(position, velocity);
+                          return !face.collision(particle, State {}, g_simulation->integrate()).has_value();
+                      } });
 
         manager.run();
     }
@@ -81,7 +87,7 @@ int main()
         g_scene->add_face({ v0, v1, v2 });
         auto face = g_scene->face(0);
 
-        manager.add({ "StaticFace::distance_to_plane",
+        manager.add({ "StaticFace::distance_to_plane", location,
                       [&]() -> bool {
                           Vec3 normal = face.normal({});
                           Vec3 p0 = g_scene->position(v0) + normal;
@@ -103,7 +109,7 @@ int main()
         g_scene = new Scene();
 
         {
-            auto p0 = g_simulation->add_particle({ 0., 0., g_simulation->timestep() }, { 0., 0., -1. });
+            auto p0 = g_simulation->add_particle({ 0., 1e-4, g_simulation->timestep() }, { 0., 0., -1. });
         }
 
         {
@@ -114,7 +120,7 @@ int main()
             g_scene->add_face({ p0, p1, p2 });
         }
 
-        manager.add({ "StaticFace::collision with particle",
+        manager.add({ "StaticFace::collision with particle", location,
                       [&]() -> bool {
                           StaticFace face = g_scene->face(0);
 
@@ -149,39 +155,42 @@ int main()
         auto spring2 = g_simulation->spring(1);
         auto spring3 = g_simulation->spring(2);
 
-        manager.add({ "Edge::lerp (orthogonal, overlapping XYZ midpoint-midpoint) ", [&]() {
-                         auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
-                         auto const [s2, t2, m2] = spring2.lerp(spring1, State {});
+        manager.add({ "Edge::lerp (orthogonal, overlapping XYZ midpoint-midpoint) ", location,
+                      [&]() {
+                          auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
+                          auto const [s2, t2, m2] = spring2.lerp(spring1, State {});
 
-                         (void)m1;
-                         (void)m2;
+                          (void)m1;
+                          (void)m2;
 
-                         auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1 - 0.5) < 1e-6;
-                         auto symmetry = (s1 == t2) && (s2 == t1);
+                          auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1 - 0.5) < 1e-6;
+                          auto symmetry = (s1 == t2) && (s2 == t1);
 
-                         return evaluation && symmetry;
-                     } });
+                          return evaluation && symmetry;
+                      } });
 
-        manager.add({ "Edge::lerp (orthogonal, overlapping XYZ end-midpoint) ", [&]() {
-                         auto const [s1, t1, m1] = spring1.lerp(spring3, State {});
-                         auto const [s2, t2, m2] = spring3.lerp(spring1, State {});
+        manager.add({ "Edge::lerp (orthogonal, overlapping XYZ end-midpoint) ", location,
+                      [&]() {
+                          auto const [s1, t1, m1] = spring1.lerp(spring3, State {});
+                          auto const [s2, t2, m2] = spring3.lerp(spring1, State {});
 
-                         (void)m1;
-                         (void)m2;
+                          (void)m1;
+                          (void)m2;
 
-                         auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1) < 1e-6;
-                         auto symmetry = (s1 == t2) && (s2 == t1);
+                          auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1) < 1e-6;
+                          auto symmetry = (s1 == t2) && (s2 == t1);
 
-                         return evaluation && symmetry;
-                     } });
+                          return evaluation && symmetry;
+                      } });
 
-        manager.add({ "Edge::collision (orthogonal, expected, overlapping XYZ midpoint-midpoint) ", [&]() {
-                         auto initial_state = State {};
-                         auto final_state = g_simulation->integrate(initial_state);
-                         auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
+        manager.add({ "Edge::collision (orthogonal, expected, overlapping XYZ midpoint-midpoint) ", location,
+                      [&]() {
+                          auto initial_state = State {};
+                          auto final_state = g_simulation->integrate(initial_state);
+                          auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
 
-                         return collision;
-                     } });
+                          return collision;
+                      } });
 
         manager.run();
         delete g_simulation;
@@ -201,35 +210,37 @@ int main()
         auto spring1 = g_simulation->spring(0);
         auto spring2 = g_simulation->spring(1);
 
-        manager.add({ "Edge::lerp (orthogonal, overlapping XY midpoint-midpoint) ", [&]() {
-                         auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
-                         auto const [s2, t2, m2] = spring2.lerp(spring1, State {});
+        manager.add({ "Edge::lerp (orthogonal, overlapping XY midpoint-midpoint) ", location,
+                      [&]() {
+                          auto const [s1, t1, m1] = spring1.lerp(spring2, State {});
+                          auto const [s2, t2, m2] = spring2.lerp(spring1, State {});
 
-                         (void)m1;
-                         (void)m2;
+                          (void)m1;
+                          (void)m2;
 
-                         auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1 - 0.5) < 1e-6;
-                         auto symmetry = (s1 == t2) && (s2 == t1);
+                          auto evaluation = std::abs(s1 - 0.5) < 1e-6 && std::abs(t1 - 0.5) < 1e-6;
+                          auto symmetry = (s1 == t2) && (s2 == t1);
 
-                         return evaluation && symmetry;
-                     } });
+                          return evaluation && symmetry;
+                      } });
 
-        manager.add({ "Edge::collision (orthogonal, overlapping XY midpoint-midpoint) ", [&]() {
-                         auto initial_state = State {};
-                         auto final_state = g_simulation->integrate(initial_state);
+        manager.add({ "Edge::collision (orthogonal, overlapping XY midpoint-midpoint) ", location,
+                      [&]() {
+                          auto initial_state = State {};
+                          auto final_state = g_simulation->integrate(initial_state);
 
-                         {
-                             // Springs are setup so that they do not intersect initially, but after integration they will
-                             auto collision = spring1.collision(spring2, initial_state, initial_state) && spring2.collision(spring1, initial_state, initial_state);
+                          {
+                              // Springs are setup so that they do not intersect initially, but after integration they will
+                              auto collision = spring1.collision(spring2, initial_state, initial_state) && spring2.collision(spring1, initial_state, initial_state);
 
-                             if (collision)
-                                 return false;
-                         }
+                              if (collision)
+                                  return false;
+                          }
 
-                         auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
+                          auto collision = spring1.collision(spring2, initial_state, final_state) && spring2.collision(spring1, initial_state, final_state);
 
-                         return collision;
-                     } });
+                          return collision;
+                      } });
 
         manager.run();
         delete g_simulation;
