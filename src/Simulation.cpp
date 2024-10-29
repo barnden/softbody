@@ -6,7 +6,6 @@
 #include "Simulation.h"
 #include "Scene.h"
 #include "State.h"
-#include <iostream>
 
 hot flatten bool resting(size_t i, State const& state)
 {
@@ -67,23 +66,48 @@ hot flatten bool resting(size_t i, State const& state)
     return true;
 }
 
-inline bool emplace(std::optional<CollisionRecord> potential_collision, CollisionRecord& collision)
+inline void emplace(std::optional<CollisionRecord> potential_collision, std::vector<CollisionRecord>& collisions)
 {
     if (!potential_collision.has_value())
-        return false;
+        return;
 
     auto record = potential_collision.value();
 
     // Skip anything that is _very_ small, then handle it in the next step
     if (record.fractional_timestep < 1e-2)
-        return false;
+        return;
 
-    if (record.fractional_timestep < collision.fractional_timestep) {
-        collision = record;
-        return true;
+    if (collisions.empty()) {
+        collisions.push_back(record);
+        return;
     }
 
-    return false;
+    if (record.fractional_timestep < collisions.back().fractional_timestep) {
+        collisions.clear();
+        collisions.push_back(record);
+        return;
+    }
+
+    if (std::abs(record.fractional_timestep - collisions.back().fractional_timestep) > 1e-3)
+        return;
+
+    for (auto&& collision : collisions) {
+        if (collision.normal != record.normal)
+            continue;
+
+        bool same_indices = (collision.indices[0] == record.indices[0]) && (collision.indices[1] == record.indices[1]) && (collision.indices[2] == record.indices[2]);
+        if (!same_indices)
+            continue;
+
+        bool same_weights = (collision.weights[0] == record.weights[0]) && (collision.weights[1] == record.weights[1]) && (collision.weights[2] == record.weights[2]);
+        if (!same_weights)
+            continue;
+
+        // Already exists; skip
+        return;
+    }
+
+    collisions.push_back(record);
 }
 
 hot flatten void Simulation::step(double max_time)
@@ -95,7 +119,7 @@ hot flatten void Simulation::step(double max_time)
         while (t_r > 1e-3 * max_time) {
             auto sf = integrate(si, t_r);
 
-            CollisionRecord collision { .fractional_timestep = 1. };
+            std::vector<CollisionRecord> collisions {};
             // (1) (vertex-face, static response) Resolve collisions between nonstatic vertices and static faces
             for (auto i = 0uz; i < m_positions.size(); i++) {
                 if (resting(i, si)) {
@@ -108,35 +132,34 @@ hot flatten void Simulation::step(double max_time)
                 // Detect collisions
                 for (auto&& face : g_scene->faces()) {
                     auto potential_collision = face.collision(particle, si, sf);
-
-                    if (!emplace(potential_collision, collision))
-                        continue;
+                    emplace(potential_collision, collisions);
                 }
             }
 
             // (2) (vertex-face, static response) Resolve collisions between static vertices and nonstatic faces
-            for (auto&& face : m_faces) {
-                for (auto&& vertex : g_scene->vertices()) {
-                    auto potential_collision = face.collision(vertex, si, sf);
-
-                    if (!emplace(potential_collision, collision))
-                        continue;
-                }
-            }
+            // for (auto&& face : m_faces) {
+            //     for (auto&& vertex : g_scene->vertices()) {
+            //         auto potential_collision = face.collision(vertex, si, sf);
+            //         emplace(potential_collision, collisions);
+            //     }
+            // }
             // TODO: (3) (vertex-face, dynamic response) Resolve collisions between nonstatic vertices and nonstatic faces
             // TODO: (4) (edge-edge, static response) Resolve collisions between edges of nonstatic and static faces
             // TODO: (5) (edge-edge, dynamic response) Resolve collisions between edges of nonstatic faces
 
             // Compute collision response
-            if (collision.fractional_timestep < 1.) {
-                auto sc = collision.state;
+            if (!collisions.empty()) {
+                auto sc = collisions.back().state;
 
-                if (collision.fractional_timestep < 1e-3) {
+                if (collisions.back().fractional_timestep < 1e-3) {
                     sf = sc;
                     break;
                 }
 
-                if (collision.type == CollisionRecord::Type::STATIC) {
+                for (auto&& collision : collisions) {
+                    // We do not handle dynamic collisions yet
+                    assert(collision.type == CollisionRecord::Type::STATIC);
+
                     // Compute velocity at collision point
                     Vec3 v_minus = Vec3::Zero();
 
@@ -148,21 +171,23 @@ hot flatten void Simulation::step(double max_time)
                     }
 
                     // TODO: Properly compute collision response (restitution/friction/other)
-                    Vec3 v_plus = -0.28 * v_minus;
+                    Vec3 v_plus = -g_simulation->restitution() * v_minus;
 
                     Vec3 v_delta_prime = (v_plus - v_minus) / (collision.weights[0] * collision.weights[0] + collision.weights[1] * collision.weights[1] + collision.weights[2] * collision.weights[2]);
 
                     sc.data1[collision.indices[0]] += collision.weights[0] * v_delta_prime;
                     sc.data1[collision.indices[1]] += collision.weights[1] * v_delta_prime;
                     sc.data1[collision.indices[2]] += collision.weights[2] * v_delta_prime;
-                } else {
-                    // TODO: Handle collisions with momentum
                 }
 
                 sf = sc;
             }
 
-            t_r -= collision.fractional_timestep * m_timestep;
+            if (collisions.empty()) {
+                t_r -= m_timestep;
+            } else {
+                t_r -= collisions.back().fractional_timestep * m_timestep;
+            }
             si = sf;
         }
         adopt(si);
