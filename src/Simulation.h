@@ -117,6 +117,6 @@ public:
     nodiscard inline decltype(auto) springs() const { return m_springs; }
 };
 
-void create_cube();
+void create_cube(Vec3 const& center=Vec3::Zero());
 
 extern Simulation* g_simulation;

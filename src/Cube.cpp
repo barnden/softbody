@@ -5,21 +5,16 @@
  */
 #include "Simulation.h"
 
-void create_cube()
+void create_cube(Vec3 const& center)
 {
-    if (g_simulation != nullptr)
-        delete g_simulation;
-
-    g_simulation = new Simulation(1. / 240.);
-
-    auto p0 = g_simulation->add_particle({ 0., 0., 0. });
-    auto p1 = g_simulation->add_particle({ 0., 1., 0. });
-    auto p2 = g_simulation->add_particle({ 1., 0., 0. });
-    auto p3 = g_simulation->add_particle({ 1., 1., 0. });
-    auto p4 = g_simulation->add_particle({ 0., 0., 1. });
-    auto p5 = g_simulation->add_particle({ 0., 1., 1. });
-    auto p6 = g_simulation->add_particle({ 1., 0., 1. });
-    auto p7 = g_simulation->add_particle({ 1., 1., 1. });
+    auto p0 = g_simulation->add_particle(center + Vec3 { 0., 0., 0. });
+    auto p1 = g_simulation->add_particle(center + Vec3 { 0., 1., 0. });
+    auto p2 = g_simulation->add_particle(center + Vec3 { 1., 0., 0. });
+    auto p3 = g_simulation->add_particle(center + Vec3 { 1., 1., 0. });
+    auto p4 = g_simulation->add_particle(center + Vec3 { 0., 0., 1. });
+    auto p5 = g_simulation->add_particle(center + Vec3 { 0., 1., 1. });
+    auto p6 = g_simulation->add_particle(center + Vec3 { 1., 0., 1. });
+    auto p7 = g_simulation->add_particle(center + Vec3 { 1., 1., 1. });
 
     {
         g_simulation->add_face({ p0, p1, p2 });
