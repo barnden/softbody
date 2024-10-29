@@ -141,7 +141,7 @@ int main()
                          Vec3 velocity = -face.normal(state_initial);
 
                          auto particle = g_manager->add_particle(position, velocity);
-                         return face.collision(particle, State {}, g_manager->integrate());
+                         return face.collision(particle, State {}, g_manager->integrate()).has_value();
                      } });
 
         manager.add({ "Face::collision (midpoint, no collision)", [&]() {
@@ -149,7 +149,7 @@ int main()
                          Vec3 velocity = -face.normal(state_initial);
 
                          auto particle = g_manager->add_particle(position, velocity);
-                         return !face.collision(particle, State {}, g_manager->integrate());
+                         return !face.collision(particle, State {}, g_manager->integrate()).has_value();
                      } });
 
         manager.run();
@@ -206,7 +206,7 @@ int main()
 
                           Vec3 normal = face.normal({});
 
-                          return face.collision({ 0 }, initial_state, final_state);
+                          return face.collision(Particle { 0 }, initial_state, final_state).has_value();
                       } });
 
         manager.run();

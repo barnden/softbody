@@ -28,7 +28,7 @@ double inline Face::distance_to_plane(Vec3 const& p, State const& state) const
     return (p - state.data0[m_v0]).dot(normal(state));
 }
 
-Vec2 Face::project(Vec3 const& p, State const& state) const
+inline Vec2 Face::project(Vec3 const& p, State const& state) const
 {
     // Project into 2D plane by dropping largest coordinate
     Vec3 N = normal(state);
@@ -58,9 +58,6 @@ Vec2 Face::project(Vec3 p) const
 }
  */
 
-template <typename T>
-int sgn(T val) { return (T {} < val) - (val < T {}); }
-
 inline decltype(auto) barycentric(Vec2 const& p, Vec2 const& p0, Vec2 const& p1, Vec2 const& p2)
 {
     // This is area of the parallelogram, not the triangle; however, the denominator uses (2 * area) so leaving it like this is OK
@@ -84,7 +81,49 @@ flatten std::pair<double, double> Face::barycentric(Vec2 const& p, State const& 
     return ::barycentric(p, p0, p1, p2);
 }
 
-flatten bool Face::collision(Particle const& particle, State const& state_initial, State const& state_final) const
+template <typename T>
+int sgn(T val) { return (T {} < val) - (val < T {}); }
+
+/**
+ * Detect collision of a (moving) face against a static point
+ * 
+ * Using this with StaticFace always returns the same result
+ */
+flatten std::optional<CollisionRecord> Face::collision(
+    Vec3 const& position,
+    State const& state_initial,
+    State const& state_final) const
+{
+    // Check collision with plane
+    auto di = distance_to_plane(position, state_initial);
+    auto df = distance_to_plane(position, state_final);
+
+    if (sgn(di) == sgn(df))
+        return std::nullopt;
+
+    // Get point of collision with plane
+    auto f = di / (di - df);
+    auto collision_state = g_manager->integrate(state_initial, f * g_manager->timestep());
+    auto pc = project(position, collision_state);
+
+    // Check if barycentric coordinates lie in the triangle
+    auto const [alpha, beta] = barycentric(pc, collision_state);
+    if ((alpha < 0) || (beta < 0.) || ((1. - alpha - beta) < 0.))
+        return std::nullopt;
+
+    return CollisionRecord {
+        .fractional_timestep = f,
+        .collision_normal = normal(collision_state)
+    };
+}
+
+/**
+ * Detect collision of a moving particle against a (potentially moving) face
+ */
+flatten std::optional<CollisionRecord> Face::collision(
+    Particle const& particle,
+    State const& state_initial,
+    State const& state_final) const
 {
     Vec3 pi = state_initial.data0[particle.index];
     Vec3 pf = state_final.data0[particle.index];
@@ -94,7 +133,7 @@ flatten bool Face::collision(Particle const& particle, State const& state_initia
     auto df = distance_to_plane(pf, state_final);
 
     if (sgn(di) == sgn(df))
-        return false;
+        return std::nullopt;
 
     // Get point of collision with plane
     auto f = di / (di - df);
@@ -103,7 +142,13 @@ flatten bool Face::collision(Particle const& particle, State const& state_initia
 
     // Check if barycentric coordinates lie in the triangle
     auto const [alpha, beta] = barycentric(pc, collision_state);
-    return (alpha >= 0.) && (beta >= 0.) && ((1. - alpha - beta) >= 0.);
+    if ((alpha < 0) || (beta < 0.) || ((1. - alpha - beta) < 0.))
+        return std::nullopt;
+
+    return CollisionRecord {
+        .fractional_timestep = f,
+        .collision_normal = normal(collision_state)
+    };
 }
 
 // flatten decltype(auto) lerp(size_t p0, size_t p1, size_t q0, size_t q1, State const& state)

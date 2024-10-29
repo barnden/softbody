@@ -5,11 +5,18 @@
  */
 #pragma once
 
+#include <optional>
+
 #include "utils.h"
 
 #include "Particle.h"
 #include "Spring.h"
 #include "State.h"
+
+struct CollisionRecord {
+    double fractional_timestep;
+    Vec3 collision_normal;
+};
 
 class Face {
 protected:
@@ -26,7 +33,8 @@ public:
 
     nodiscard virtual double distance_to_plane(Vec3 const&, State const&) const;
     nodiscard virtual std::pair<double, double> barycentric(Vec2 const&, State const&) const;
-    nodiscard virtual bool collision(Particle const&, State const&, State const&) const;
+    nodiscard std::optional<CollisionRecord> collision(Vec3 const&, State const&, State const&) const;
+    nodiscard std::optional<CollisionRecord> collision(Particle const&, State const&, State const&) const;
 
     // nodiscard std::tuple<double, double, Vec3> lerp(size_t p0, size_t p1, size_t q0, size_t q1, State const& state) const;
     // flatten nodiscard std::tuple<double, double, Vec3> lerp(Particle const& p0, Particle const& p1, Particle const& q0, Particle const& q1, State const& state) const
