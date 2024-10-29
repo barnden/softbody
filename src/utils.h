@@ -9,8 +9,8 @@
 
 #define nodiscard [[nodiscard]]
 
-#ifdef __GNUC_
-#    define[[gnu::flatten]]
+#ifdef __GNUC__
+#    define flatten [[gnu::flatten]]
 #else
 #    define flatten __attribute__((flatten))
 #endif
