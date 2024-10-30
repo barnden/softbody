@@ -115,6 +115,9 @@ public:
     nodiscard inline decltype(auto) vertices() const { return m_positions; }
     nodiscard inline decltype(auto) faces() const { return m_faces; }
     nodiscard inline decltype(auto) springs() const { return m_springs; }
+
+    nodiscard inline double restitution() const { return .75; }
+    nodiscard inline double friction() const { return .5; }
 };
 
 void create_cube(Vec3 const& center=Vec3::Zero());

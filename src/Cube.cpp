@@ -75,10 +75,10 @@ void create_cube(Vec3 const& center)
         g_simulation->add_spring({ p3, p6 });
     }
 
-    { // Internal diagonals
-        g_simulation->add_spring({ p0, p7 });
-        g_simulation->add_spring({ p1, p6 });
-        g_simulation->add_spring({ p3, p4 });
-        g_simulation->add_spring({ p2, p5 });
-    }
+    // { // Internal diagonals
+    //     g_simulation->add_spring({ p0, p7 });
+    //     g_simulation->add_spring({ p1, p6 });
+    //     g_simulation->add_spring({ p3, p4 });
+    //     g_simulation->add_spring({ p2, p5 });
+    // }
 }

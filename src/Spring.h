@@ -10,6 +10,8 @@
 struct Particle;
 struct State;
 
+#define __K 935.
+
 struct Spring {
     size_t p0;
     size_t p1;
@@ -18,8 +20,8 @@ struct Spring {
     double d; // damper constant
     double L0; // rest length
 
-    Spring(size_t p0, size_t p1, double k = 1., double d = 1.);
-    Spring(Particle const& p0, Particle const& p1, double k = 1., double d = 0.);
+    Spring(size_t p0, size_t p1, double k = __K, double d = 0.);
+    Spring(Particle const& p0, Particle const& p1, double k = __K, double d = 0.);
 
     nodiscard std::tuple<double, double, Vec3> lerp(Spring const&, State const&) const;
     nodiscard bool collision(Spring const&, State const&, State const&) const;

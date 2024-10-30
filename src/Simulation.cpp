@@ -74,7 +74,7 @@ inline void emplace(std::optional<CollisionRecord> potential_collision, std::vec
     auto record = potential_collision.value();
 
     // Skip anything that is _very_ small, then handle it in the next step
-    if (record.fractional_timestep < 1e-2)
+    if (record.fractional_timestep < 1e-4)
         return;
 
     if (collisions.empty()) {
@@ -181,12 +181,9 @@ hot flatten void Simulation::step(double max_time)
                 }
 
                 sf = sc;
-            }
-
-            if (collisions.empty()) {
-                t_r -= m_timestep;
-            } else {
                 t_r -= collisions.back().fractional_timestep * m_timestep;
+            } else {
+                t_r -= m_timestep;
             }
             si = sf;
         }

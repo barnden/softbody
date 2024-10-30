@@ -17,6 +17,7 @@ Scene* g_scene;
 
 int main()
 {
+    g_simulation = new Simulation(1. / 240., Simulation::Integrator::RK4);
     create_cube();
 
     {
